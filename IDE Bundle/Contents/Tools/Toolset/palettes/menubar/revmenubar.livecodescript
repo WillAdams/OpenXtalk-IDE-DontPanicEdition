@@ -109,7 +109,7 @@ private on setupTextMenu
    put "Size" & return after tText
 
    local tFontSizes
-   put format("Use Owner's Size\n-\n8\n9\n10\n12\n14\n18\n24\n36\n48\n-\nOther...") into tFontSizes
+   put format("Use Owner's Size\n-\n8\n9\n10\n12\n14\n18\n24\n36\n48\n-\nSmaller&/-\nBigger&/=\n-\nOther...") into tFontSizes -- added smaller and bigger option (tperry 30-12-23)
    repeat for each line l in tFontSizes
       if l is "-" then put tab & l & cr after tText
       else put "!u" & tab & l & cr after tText
@@ -125,7 +125,8 @@ private on setupTextMenu
          put "!u" & tab & tColor & return after tText
       end if
    end repeat
-   put  "-" & return & "&Align" & return & "!u"  & tab & "Left" & return & "!u" & tab & "Center" & return & "!u" & tab & "Right" after tText
+   -- shortcuts on align left, right (tperry 30-11-24)
+   put  "-" & return & "&Align" & return & "!u"  & tab & "Left&/^@L" & return & "!u" & tab & "Center&/^@C" & return & "!u" & tab & "Right&/^@R" after tText
 
    # Cache the text menu text in non-disabled state
    put tText into sTextMenuText
@@ -1210,7 +1211,11 @@ on revMenubarMenuButtonClicked pWhich
          revIDEOpenPalette "Resource Center"
          break
       case "Dictionary"
-         revIDEDocumentationLoad "API", "Script"
+         if the shiftkey is down then
+            revIDEDocumentationLoad "API", "Script" -- put this back in for Paul (tperry 3-2-24)
+         else
+            tNewDictionaryDisplay
+         end if
          break
       case "Test"
          revIDEDeployAction
@@ -1379,6 +1384,9 @@ function buildMenuContext
          end if
          break
          case "image"
+            -- put pIsThisAGif(tSelectedObject) into pIsGif
+            -- if pIsGif is true then put false into tEnableFlipandRotate -- if it's a gif, we disable the flip and rotate (tperry 7/4/24)
+
             put false into tAllGraphics
             break
          default
@@ -1402,6 +1410,18 @@ function buildMenuContext
 end buildMenuContext
 
 ################################################################################
+-- replace with my image 'text' GIF Header check
+private function pIsThisAGif tSelectedObject
+   -- this is a really hacky way of doing things!
+   put "set the tSelectedObject of stack " & QUOTE & "revMenubar" & QUOTE & " to the short name of " & tSelectedObject  into tDoCmd
+   do tDoCmd -- yeah, I don't like this (tperry 7-4-24)
+   put the tSelectedObject of stack"revMenubar" into tImgName
+   if tImgName contains ".gif" then
+      return true
+   else
+      return false
+   end if
+end pIsThisAGif
 
 private function revMenubarFileMenu pContext
    local tIsUserTarget, tIsScriptOnly
@@ -1592,8 +1612,7 @@ private function revMenubarToolsMenu pContext
    put toggleMenuItem("&Tools Palette/T", revIDEPaletteIsVisible("tools")) & return after tTools
    put toggleMenuItem("&Paint and Draw Tools", "paint" is among the items of revIDEGetPreference("revTools_show")) & return after tTools
    put "-" & return after tTools
-
-   put toggleMenuItem("Project Browser", revIDEPaletteIsVisible("project browser")) & return after tTools
+   put toggleMenuItem("Project Browser/^@P", revIDEPaletteIsVisible("project browser")) & return after tTools -- tperry, 21-12-23 added shortcut for project browser
    put toggleMenuItem("&Message Box/M", revIDEPaletteIsVisible("message box")) & return after tTools
    put toggleMenuItem("Extension Manager", revIDEPaletteIsVisible("extension manager")) & return after tTools
    put toggleMenuItem("Extension Builder", revIDEPaletteIsVisible("extension builder")) & return after tTools
